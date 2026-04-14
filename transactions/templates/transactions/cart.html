@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-10">
+    <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Trung tâm Giỏ Hàng</h1>
+    <p class="mt-2 text-gray-500">Kiểm tra lại sách cần mua và sách cần mượn trước khi xác nhận.</p>
+</div>
+
+<!-- GIAO DIỆN CHIA 2 CỘT RESPONSIVE -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+    <!-- =========== CỘT 1: GIỎ HÀNG MUA TÀI LIỆU =========== -->
+    <div class="bg-white rounded-2xl shadow-sm border border-indigo-100 overflow-hidden flex flex-col">
+        <div class="bg-indigo-50/70 px-6 py-5 border-b border-indigo-100 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                Giỏ hàng Mua Tặng Dịch
+            </h2>
+            <span class="bg-indigo-200 text-indigo-800 text-xs px-2.5 py-1 rounded-full font-bold">
+                {{ buy_items|length }} mục
+            </span>
+        </div>
+        
+        <div class="p-6 flex-grow flex flex-col">
+            {% if buy_items %}
+                <form action="{% url 'checkout_buy' %}" method="POST" class="flex flex-col flex-grow">
+                    {% csrf_token %}
+                    <ul class="divide-y divide-gray-100 flex-grow mb-6">
+                        {% for item in buy_items %}
+                        <li class="py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" name="selected_books" value="{{ item.book.id }}" data-id="{{ item.book.id }}" data-price="{{ item.book.sell_price|stringformat:'f' }}" class="calc-checkbox mt-1 w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer" checked>
+                                <div>
+                                    <p class="font-bold text-gray-900 leading-tight">{{ item.book.title }}</p>
+                                    <p class="text-sm text-gray-500 mt-1">Đơn giá: {{ item.book.sell_price }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 self-end sm:self-auto">
+                                <span class="text-sm text-gray-500 font-semibold">SL:</span>
+                                <!-- Ô nhập số lượng, max tùy thuộc vào kho bán -->
+                                <input type="number" name="quantity_{{ item.book.id }}" data-id="{{ item.book.id }}" value="{{ item.quantity }}" min="1" max="{{ item.book.sell_stock }}" class="calc-qty w-16 px-2 py-1.5 border border-gray-300 rounded-lg shadow-sm text-center focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold text-gray-900" title="Trong kho còn: {{ item.book.sell_stock }}">
+                                <div class="font-black text-indigo-600 min-w-[80px] text-right" id="line-total-{{ item.book.id }}">
+                                    {{ item.total_price }}
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <div class="mt-auto pt-6 border-t border-gray-100 flex justify-between items-end mb-6">
+                        <span class="text-gray-500 font-medium">Tổng tạm tính tất cả giỏ:</span>
+                        <span class="text-2xl font-black text-indigo-700" id="grand-total">{{ buy_total }} VNĐ</span>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-indigo-600 shadow-md shadow-indigo-600/30 text-white py-3.5 rounded-xl font-bold hover:bg-indigo-700 transition">
+                        Thanh toán Sách đang tích
+                    </button>
+                </form>
+            {% else %}
+                <div class="flex-grow flex flex-col items-center justify-center py-12 text-gray-400">
+                    <svg class="w-16 h-16 mb-4 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <p>Chưa có sách nào trong giỏ mua.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+
+    <!-- =========== CỘT 2: GIỎ HÀNG ĐĂNG KÝ MƯỢN SÁCH =========== -->
+    <div class="bg-white rounded-2xl shadow-sm border border-teal-100 overflow-hidden flex flex-col">
+        <div class="bg-teal-50/70 px-6 py-5 border-b border-teal-100 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-teal-900 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                Giỏ hàng Mượn Học Tự do
+            </h2>
+            <span class="bg-teal-200 text-teal-800 text-xs px-2.5 py-1 rounded-full font-bold">
+                {{ borrow_items|length }} mục
+            </span>
+        </div>
+
+        <div class="p-6 flex-grow flex flex-col">
+            {% if borrow_items %}
+                <form action="{% url 'checkout_borrow' %}" method="POST" class="flex flex-col flex-grow">
+                    {% csrf_token %}
+                    <ul class="divide-y divide-gray-100 flex-grow mb-6">
+                        {% for item in borrow_items %}
+                        <li class="py-4 flex justify-between items-center gap-4">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" name="selected_borrow_books" value="{{ item.book.id }}" class="mt-1 w-5 h-5 text-teal-600 rounded border-gray-300 focus:ring-teal-500 cursor-pointer" checked>
+                                <div>
+                                    <p class="font-bold text-gray-900 leading-tight">{{ item.book.title }}</p>
+                                    <p class="text-sm text-gray-500 mt-1">Tác giả: {{ item.book.author }}</p>
+                                </div>
+                            </div>
+                            <span class="bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-200 whitespace-nowrap shadow-sm">
+                                Yêu cầu: 1 cuốn
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <div class="mt-auto pt-6 border-t border-gray-100">
+                        <div class="rounded-xl bg-orange-50/80 p-4 mb-6 border border-orange-100">
+                            <div class="flex items-start">
+                                <svg class="h-5 w-5 text-orange-400 mt-0.5 min-w-[20px]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                                <div class="ml-3">
+                                    <p class="text-sm text-orange-800 leading-snug">
+                                        Thủ thư sẽ xác nhận yêu cầu của bạn qua hệ thống. Thời hạn mượn mặc định cho mỗi cuốn được cấp hệ thống là <strong>14 ngày</strong>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-teal-500 shadow-md shadow-teal-500/30 text-white py-3.5 rounded-xl font-bold hover:bg-teal-600 transition">
+                            Gửi Yêu Cầu Sách Tích Chọn
+                        </button>
+                    </div>
+                </form>
+            {% else %}
+                <div class="flex-grow flex flex-col items-center justify-center py-12 text-gray-400">
+                    <svg class="w-16 h-16 mb-4 text-teal-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <p>Giỏ đăng ký mượn chưa có quyển sách nào.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const checkboxes = document.querySelectorAll('.calc-checkbox');
+        const qtys = document.querySelectorAll('.calc-qty');
+        const grandTotalEl = document.getElementById('grand-total');
+
+        function formatCurrency(number) {
+            // Định dạng tiền tệ theo locale tiếng việt (Dùng dấu chấm/phẩy)
+            return number.toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+        }
+
+        function calculateCart() {
+            let grandTotal = 0;
+            checkboxes.forEach((cb) => {
+                const bookId = cb.getAttribute('data-id');
+                const price = parseFloat(cb.getAttribute('data-price')) || 0;
+                
+                const qtyInput = document.querySelector('.calc-qty[data-id="' + bookId + '"]');
+                let qty = qtyInput ? parseInt(qtyInput.value) : 1;
+                if (isNaN(qty) || qty < 1) qty = 1;
+
+                const lineTotal = price * qty;
+                
+                // Luôn render cập nhật Subtotal trên mỗi item bằng JS
+                const lineTotalEl = document.getElementById('line-total-' + bookId);
+                if (lineTotalEl) {
+                    lineTotalEl.textContent = formatCurrency(lineTotal);
+                }
+
+                // Cộng dồn vào GrandTotal nếu thẻ checkbox được Tick
+                if (cb.checked) {
+                    grandTotal += lineTotal;
+                }
+            });
+            
+            // Xả xuống ô kết quả cuối cùng
+            if (grandTotalEl) {
+                grandTotalEl.textContent = formatCurrency(grandTotal) + ' VNĐ';
+            }
+        }
+
+        checkboxes.forEach(cb => cb.addEventListener('change', calculateCart));
+        qtys.forEach(input => {
+            input.addEventListener('input', calculateCart);
+            input.addEventListener('change', calculateCart);
+        });
+
+        // Trigger khởi chạy format ngay khi vừa bật trình duyệt lên
+        calculateCart();
+    });
+</script>
+{% endblock %}

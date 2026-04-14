@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Thư viện của Trường</h1>
+    <p class="mt-2 text-gray-500">Khám phá và đăng ký mượn/đặt mua tài liệu trực tuyến thiết kế tinh giản.</p>
+</div>
+
+<!-- Lưới Sách 4 cột trên Desktop, 2 cột trên IPad, 1 cột Mobile -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    {% for book in books %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+        
+        <!-- Ảnh bìa sách mock box mảng màu ghi sáng (nếu ko có file up) -->
+        <div class="h-56 bg-gray-100 flex items-center justify-center relative">
+            {% if book.cover_image %}
+                <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="object-cover h-full w-full">
+            {% else %}
+                <svg class="h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+            {% endif %}
+            
+            <!-- Đổi màu tag Category nổi trên ảnh -->
+            {% if book.category %}
+            <span class="absolute top-3 right-3 bg-white/90 backdrop-blur text-xs font-semibold px-2 py-1 rounded-md text-gray-600 shadow-sm">
+                {{ book.category.name }}
+            </span>
+            {% endif %}
+        </div>
+        
+        <!-- Nội dung thân the card -->
+        <div class="p-5 flex-grow flex flex-col">
+            <h3 class="text-lg font-bold text-gray-900 leading-tight mb-1 truncate" title="{{ book.title }}">
+                {{ book.title }}
+            </h3>
+            <p class="text-sm text-gray-500 mb-4">{{ book.author }}</p>
+            
+            <!-- Badge Tình trạng Kho -->
+            <div class="flex space-x-2 text-xs mb-4">
+                <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-semibold border border-blue-100">
+                    Bán: {{ book.sell_stock }} cuốn
+                </span>
+                <span class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md font-semibold border border-emerald-100">
+                    Mượn: {{ book.borrow_stock }} cuốn
+                </span>
+            </div>
+            
+            <!-- Giá -->
+            <div class="text-xl font-extrabold text-indigo-600 mb-5">
+                {{ book.sell_price }} <span class="text-sm font-normal text-gray-500">VNĐ</span>
+            </div>
+            
+            <!-- Cụm Action Buttons: 2 nửa 1 Grid -->
+            <div class="mt-auto grid grid-cols-2 gap-3">
+                <form action="{% url 'add_to_buy' book.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
+                            {% if book.sell_stock <= 0 %}disabled title="Hết hàng"{% endif %}>
+                        🛒 Mua
+                    </button>
+                </form>
+
+                <form action="{% url 'add_to_borrow' book.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="w-full bg-teal-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-teal-600 active:bg-teal-700 transition focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-1"
+                            {% if book.borrow_stock <= 0 %}disabled title="Hết lượt mượn"{% endif %}>
+                        📖 Mượn
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <!-- Placeholder nếu chưa có sách nào trong DB -->
+    <div class="col-span-full py-16 text-center text-gray-500">
+        Hiện tại thư viện trường chưa có cuốn sách nào lên kệ.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

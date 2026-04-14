@@ -1,0 +1,29 @@
+# Database
+db.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual Environment
+env/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Static collected
+staticfiles/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Zip deploy
+*.zip
+
+# Gemini
+.gemini/

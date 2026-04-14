@@ -1,0 +1,55 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+  <li>
+      <button type="button" 
+         id="btn-export-csv"
+         onclick="
+            var select = document.querySelector('select[name=\'action\']');
+            if (select) {
+                select.value = 'export_as_csv';
+                var goBtn = document.querySelector('button[name=\'index\']');
+                if (goBtn) {
+                    goBtn.click();
+                } else {
+                    var inputIndex = document.createElement('input');
+                    inputIndex.type = 'hidden'; inputIndex.name = 'index'; inputIndex.value = '0';
+                    select.form.appendChild(inputIndex);
+                    select.form.submit();
+                }
+            }
+         " 
+         class="addlink" 
+         style="background-color: #10b981; color: white; margin-left: 10px; font-weight: bold; opacity: 0.4; pointer-events: none; transition: 0.3s; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">
+          📊 Xuất CSV Đã Chọn
+      </button>
+  </li>
+
+  <script>
+      // Đợi HTML load xong toàn bộ
+      document.addEventListener('DOMContentLoaded', function() {
+          const btnExport = document.getElementById('btn-export-csv');
+          const checkBoxes = document.querySelectorAll('.action-select, #action-toggle');
+
+          function toggleButton() {
+              // Tìm xem có checkbox con nào đang được tick không
+              const isChecked = document.querySelectorAll('.action-select:checked').length > 0;
+              if (isChecked) {
+                  // Bật sáng
+                  btnExport.style.opacity = '1';
+                  btnExport.style.pointerEvents = 'auto';
+              } else {
+                  // Làm mờ, vô hiệu hóa
+                  btnExport.style.opacity = '0.4';
+                  btnExport.style.pointerEvents = 'none';
+              }
+          }
+
+          // Lắng nghe sự kiện check/uncheck của tất cả các ô tick
+          checkBoxes.forEach(function(cb) {
+              cb.addEventListener('change', toggleButton);
+          });
+      });
+  </script>
+{% endblock %}

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Hóa Đơn Trường Mua Sách</title>
+    <style>
+        /* 
+         * Đặc thù của thư viện xhtml2pdf:
+         * Không hỗ trợ class hiện đại, chỉ đọc được CSS cứng cơ bản.
+         * Phải dùng @page để set định dạng kích cỡ khổ giấy.
+         */
+        @page {
+            size: a4 portrait;
+            margin: 2cm;
+        }
+        
+        body {
+            font-family: 'ArialVN';
+            font-size: 13px;
+            color: #333;
+        }
+
+        .header-table, .info-table, .items-table {
+            width: 100%;
+        }
+
+        .header-table {
+            border-bottom: 2px solid #2980b9;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+
+        .info-table {
+            margin-bottom: 30px;
+        }
+
+        .info-table td {
+            padding: 4px 0;
+            font-size: 14px;
+        }
+
+        /* Styling cho table item List */
+        .items-table {
+            border-collapse: collapse; /* Bắt buộc để line hiển thị đẹp bằng table */
+        }
+
+        .items-table th, .items-table td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .items-table th {
+            background-color: #ecf0f1;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+
+        .text-bold {
+            font-weight: bold;
+        }
+
+        .total-row td {
+            font-weight: bold;
+            font-size: 15px;
+            background-color: #fce4ec;
+            color: #c0392b;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Watermark Logo Ẩn dưới nền -->
+    <!-- Opacity css trong xhtml2pdf không hoạt động ổn định trên div absolute, nên ta dùng thuộc tính zoom/width để định hình hiển thị thô -->
+    <div id="watermark" style="position: absolute; top: 180px; left: 16%; opacity: 0.15; z-index: -100;">
+        <img src="{{ logo_path }}" width="500" height="500">
+    </div>
+
+    <!-- KHỐI 1: HEADER LOGO & SCHOOL INFO (Dùng table chia mảng trái phải vì không có thẻ float) -->
+    <table class="header-table">
+        <tr>
+            <td width="60%">
+                <span style="font-size: 18px; font-weight: bold; color: #d32f2f;">HỌC VIỆN CÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG</span><br/>
+                <span style="font-size: 15px; font-weight: bold; color: #2c3e50;">(PTIT)</span><br/>
+                Trung Tâm Thư Viện Cơ Sở Đa Phương Tiện
+            </td>
+            <td width="40%" class="text-right" style="vertical-align: top;">
+                <span style="font-size: 20px; font-weight: bold; color: #e74c3c;">BIÊN LAI ĐIỆN TỬ</span><br/>
+                <span style="color: #7f8c8d;">Ngày tải: {% now "d/m/Y H:i" %}</span>
+            </td>
+        </tr>
+    </table>
+
+    <!-- KHỐI 2: THÔNG TIN ĐƠN HÀNG VÀ NGƯỜI MUA -->
+    <table class="info-table">
+        <tr>
+            <td width="20%" class="text-bold">Mã Phiếu Thu:</td>
+            <td width="30%">#HD-{{ order.id|stringformat:"05d" }}</td>
+            <td width="20%" class="text-bold">Tình Trạng:</td>
+            <td width="30%" style="color: #27ae60; font-weight: bold;">ĐÃ THANH TOÁN KHO</td>
+        </tr>
+        <tr>
+            <td class="text-bold">Người nộp tiền:</td>
+            <td>{{ order.user.get_full_name|default:order.user.username }}</td>
+            <td class="text-bold">Ghi nhận lúc:</td>
+            <td>{{ order.created_at|date:"H:i, d/m/Y" }}</td>
+        </tr>
+    </table>
+
+    <br/>
+    <h3 style="color: #2980b9;">CHI TIẾT MỤC LỤC SÁCH XUẤT KHO:</h3>
+
+    <!-- KHỐI 3: DANH SÁCH SẢN PHẨM MUA HOẶC TÀI LIỆU -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th width="5%">STT</th>
+                <th width="40%">Tựa Sách/Tài Liệu</th>
+                <th width="15%">Đơn giá (VNĐ)</th>
+                <th width="15%">Số lượng</th>
+                <th width="25%">Thành tiền (VNĐ)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+            <tr>
+                <td class="text-center">{{ forloop.counter }}</td>
+                <td>{{ item.book.title }}</td>
+                <td class="text-right">{{ item.price_at_time_of_purchase }}</td>
+                <td class="text-center">{{ item.quantity }}</td>
+                <!-- Django template không làm tính toán nhân tích cực, nhưng vì hoá đơn tĩnh, nên giá ở table có thể bỏ qua tính inline hoặc xử lý ở View -->
+                <!-- Tại đây, biểu diễn đơn giá cho phép theo format. Vì order đã có tổng tiền nên ta show tổng tiền cuối -->
+                <td class="text-right text-bold">{{ item.price_at_time_of_purchase }} x {{ item.quantity }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center" style="font-style: italic;">Phát hiện đơn hàng không chứa item nào hợp lệ.</td>
+            </tr>
+            {% endfor %}
+            
+            <!-- HÀNG TỔNG CỘNG TIỀN -->
+            <tr class="total-row">
+                <td colspan="4" class="text-right">TỔNG CPA:</td>
+                <td class="text-right">{{ order.total_price }} VNĐ</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <br/><br/><br/>
+    <!-- KHỐI CHỮ KÝ -->
+    <table style="width: 100%;">
+        <tr>
+            <td width="50%" class="text-center text-bold">
+                CÁN BỘ THƯ VIỆN<br/>
+                <span style="font-size: 11px; font-weight: normal; font-style: italic;">(Đã lưu hồ sơ trên hệ thống lưới)</span>
+            </td>
+            <td width="50%" class="text-center text-bold">
+                NGƯỜI NỘP NHẬN SÁCH<br/>
+                <span style="font-size: 11px; font-weight: normal; font-style: italic;">(Chữ ký điện toán bằng Email xác thực)</span>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
