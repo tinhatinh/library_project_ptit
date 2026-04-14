@@ -91,12 +91,6 @@ Truy cập: `http://127.0.0.1:8000/` | Admin: `http://127.0.0.1:8000/admin/`
 
 > *Sẽ cập nhật sau*
 
-## 👥 Thành viên nhóm
-
-| STT | Họ và tên | MSSV |
-|-----|-----------|------|
-| 1 | | |
-| 2 | | |
 
 ## 📄 Giấy phép
 
